@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: os-mcp-server
+  namespace: panda-os
+  labels:
+    app: os-mcp-server
+  annotations:
+    metallb.io/address-pool: sdf-services 
+
+spec:
+  serviceName: "os-mcp-lb"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: os-mcp-server
+  template:
+    metadata:
+      labels:
+        app: os-mcp-server
+    spec:
+      restartPolicy: Always 
+      containers:
+        - name: os-mcp-server
+          image: zhaoyuyang/panda_opensearch_mcp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "4Gi"
+          env:
+            - name: OPENSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: host
+            - name: OPENSEARCH_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: port
+            - name: OPENSEARCH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: username
+            - name: OPENSEARCH_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: password
+            - name: KNN_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: knn_index
+            - name: COMPLETED_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: completed_index
+            - name: RUNNING_INDEX
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: running_index
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: api_key
+            - name: API_KEY_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: api_key_name
