@@ -22,7 +22,7 @@ spec:
       restartPolicy: Always 
       containers:
         - name: os-mcp-server
-          image: zhaoyuyang/panda_opensearch_mcp:latest
+          image: zhaoyuyang/panda_opensearch_mcp:0.0.1
           imagePullPolicy: Always
           ports:
             - containerPort: 8000

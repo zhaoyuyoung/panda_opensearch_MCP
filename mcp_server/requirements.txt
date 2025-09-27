@@ -1,6 +1,21 @@
-fastapi
-uvicorn[standard]
-httpx
-opensearch-py
-pydantic
-numpy
+# Core MCP + async
+fastmcp>=2.12.4
+anyio>=4.0.0                # 4.11.0
+
+# Data models & validation
+pydantic>=2.0.0             # 2.11.9
+
+# OpenSearch client (sync + async support)
+opensearch-py>=2.4.2        # 3.0.0
+
+# Useful numerics
+numpy>=1.26.0               # 2.3.3
+
+# Web server for exposing MCP endpoints (HTTP/SSE, k8s friendly)
+fastapi>=0.115.0            # 0.117.1
+uvicorn[standard]>=0.29.0   # 0.37.0
+
+# Reliability in k8s
+httpx>=0.27.0               # 0.28.1
+python-dotenv>=1.0.1        # 1.1.1 
+

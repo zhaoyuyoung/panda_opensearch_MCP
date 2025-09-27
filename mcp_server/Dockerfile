@@ -15,6 +15,5 @@ COPY . /opt/os_mcp_server
 
 ENTRYPOINT ["sh", "-c", "cd /opt/os_mcp_server && exec \"$@\"", "--"]
 
-# Expose MCP server port
-EXPOSE 8000
-CMD ["uvicorn", "mcp_server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run MCP server
+CMD ["python", "mcp_server.py"]

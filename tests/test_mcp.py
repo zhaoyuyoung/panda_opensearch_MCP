@@ -1,89 +1,83 @@
-import requests
 import json, re
 import numpy as np
+import asyncio, anyio
+from fastmcp.client import Client
 
-raw_vector = np.random.rand(768).tolist()
-def normalize(vec):
-    norm = np.linalg.norm(vec)
-    return (vec / norm).tolist() if norm != 0 else vec
-normalized_vector = normalize(np.array(raw_vector))
-kNN_index = "FIXME"
-completed_index = "FIXME"
-running_index = "FIXME"
-
-# ----------------------------
-# MCP Server Configuration
-# ----------------------------
-MCP_SERVER_URL = "http://localhost:8000/call_function"
+kNN_index = "test_knn"
+completed_index = "test_completed"
+running_index = "test_running"
+TOKEN = "test_token"
+MCP_SERVER_URL = "http://localhost:8000/sse"  # or your LoadBalancer IP
 
 # ----------------------------
 # Helper function to call MCP
 # ----------------------------
-def call_mcp_function(function_name: str, arguments: dict):
+async def call_mcp_function(function_name: str, arguments: dict):
     """
-    Calls a MCP server function and returns the result.
+    Call an MCP server function with exception handling.
     """
-    payload = {
-        "function_name": function_name,
-        "arguments": arguments
-    }
-
-    headers = {
-        "access_token": "FIXME"  # API key
-    }
-
     try:
-        response = requests.post(MCP_SERVER_URL, json=payload, headers=headers, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("result", None)
-    except requests.HTTPError as e:
-        return {"error": f"HTTP error: {e}"}
-    except requests.RequestException as e:
-        return {"error": f"Request failed: {e}"}
-    except json.JSONDecodeError as e:
-        return {"error": f"Failed to decode JSON: {e}"}
+        async with Client(MCP_SERVER_URL, auth=TOKEN) as client:
+            return await client.call_tool(function_name, arguments)
+    except asyncio.TimeoutError:
+        return {"error": "Request timed out"}
+    except OSError as e:
+        return {"error": f"Connection error: {e}"}
+    except Exception as e:
+        return {"error": f"Unexpected error: {e}"}
 
 # ----------------------------
 # Example usage
 # ----------------------------
-if __name__ == "__main__":
+def normalize(vec):
+    norm = np.linalg.norm(vec)
+    return (vec / norm).tolist() if norm != 0 else vec
+raw_vector = np.random.rand(768).tolist()
+normalized_vector = normalize(np.array(raw_vector))
+
+async def main():
     pandaid=53551225
     # Example metadata search
-    metadata = call_mcp_function(
-        "functions.metadata_search",
+    metadata = await call_mcp_function(
+        "metadata_search_tool",
         {"job_id": pandaid, "index": completed_index}
     )
     print(f"metadata: {metadata}\n")
-    print("MCP Sever Response:")
-    print(json.dumps(metadata, indent=2))
-
+    
     # Example log query
-    pilotid = metadata['result'].get('pilotid')
+    docs = metadata.structured_content.get("result", [])
+    if docs:
+        pilotid = docs[0].get('pilotid')
     match = re.search(r"(.*)\bpilotlog.txt\b", pilotid)
     if match:
         url = match.group(1) + "payload.stderr"
-    log = call_mcp_function(
-        "functions.log_query",
+    log = await call_mcp_function(
+        "log_query_tool",
         {"path": url}
         #{"path": url, "tail": 200}
     )
-    print(f"log: {log['result']}\n")
-    print("MCP Sever Response:")
-    print(json.dumps(log, indent=2))
-
+    print(f"log: {log.structured_content.get('result', [])}\n")
+    
     # Example document to update AI-index
     doc = {
-        "id": 1,
-        "pandaid": 53551225,
+        "pandaid": pandaid,
         "statechangetime": "2025-08-06 17:29:50",
         "job_summary": "Reco step failed with exit code 137",
         "job_summary_vector": normalized_vector
     }
-    result = call_mcp_function(
-        "functions.update_AI_index",
-        {"document": doc, "index_name": "panda_k-nn_test"}
+    result = await call_mcp_function(
+        "update_document_tool",
+        {"index_name": kNN_index, "document_id": "1", "update_data": doc}
     )
-    print("MCP Sever Response:")
-    print(json.dumps(result, indent=2))
+    print(f"MCP Sever Response: {result}\n")
 
+    # Example document to index AI-index
+    result = await call_mcp_function(
+        "index_document_tool",
+        {"index_name": kNN_index, "data": doc}
+    )
+    print(f"MCP Sever Response: {result}\n")
+    
+
+if __name__ == "__main__":
+    asyncio.run(main())

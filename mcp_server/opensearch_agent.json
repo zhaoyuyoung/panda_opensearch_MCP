@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "OpenSearchAgent": {
+      "transport": "sse",
+      "url": "http://<LOADBALANCER_IP>/sse"
+    }
+  }
+}
