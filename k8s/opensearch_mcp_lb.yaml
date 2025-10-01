@@ -11,6 +11,11 @@ spec:
   selector:
     app: os-mcp-server
   ports:
-    - protocol: TCP
+    - name: mcp
+      protocol: TCP
       port: 8000
       targetPort: 8000
+    - name: rest
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
