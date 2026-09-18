@@ -5,8 +5,6 @@ metadata:
   namespace: panda-os
   labels:
     app: os-mcp-server
-  annotations:
-    metallb.io/address-pool: sdf-services 
 
 spec:
   serviceName: "os-mcp-lb"
